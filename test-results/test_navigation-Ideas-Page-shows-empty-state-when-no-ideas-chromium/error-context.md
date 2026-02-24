@@ -1,0 +1,41 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - heading "DayFlow" [level=1] [ref=e5]
+      - paragraph [ref=e6]: Dein persönlicher Tagesplaner
+    - generic [ref=e7]:
+      - heading "Anmelden" [level=2] [ref=e8]
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]: E-Mail
+          - textbox "E-Mail" [ref=e12]:
+            - /placeholder: name@beispiel.de
+        - generic [ref=e13]:
+          - generic [ref=e14]:
+            - generic [ref=e15]: Passwort
+            - link "Passwort vergessen?" [ref=e16] [cursor=pointer]:
+              - /url: /forgot-password
+          - generic [ref=e17]:
+            - textbox "Passwort" [ref=e18]:
+              - /placeholder: ••••••••
+            - button "Passwort anzeigen" [ref=e19] [cursor=pointer]:
+              - img [ref=e20]
+        - button "Anmelden" [disabled] [ref=e23]
+      - generic [ref=e24]:
+        - separator [ref=e25]
+        - generic [ref=e26]: oder
+        - separator [ref=e27]
+      - button "Mit Google anmelden" [ref=e28] [cursor=pointer]:
+        - img [ref=e29]
+        - text: Mit Google anmelden
+      - paragraph [ref=e34]:
+        - text: Noch kein Konto?
+        - link "Registrieren" [ref=e35] [cursor=pointer]:
+          - /url: /register
+  - button "Open Next.js Dev Tools" [ref=e41] [cursor=pointer]:
+    - img [ref=e42]
+  - alert [ref=e45]
+```

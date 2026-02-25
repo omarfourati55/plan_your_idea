@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     .from('ideas')
     .insert({
       user_id: user.id,
-      ...validation.data,
+      ...validation.data!,
     })
     .select()
     .single()

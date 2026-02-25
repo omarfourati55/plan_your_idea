@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     .from('tasks')
     .insert({
       user_id: user.id,
-      ...validation.data,
+      ...validation.data!,
     })
     .select()
     .single()

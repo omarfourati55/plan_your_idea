@@ -3,10 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { validateUpdateLink } from '@/lib/validators/ideas-links'
 
 interface RouteContext {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(_request: NextRequest, { params }: RouteContext) {
+  const { id } = await params
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -17,7 +18,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   const { data, error } = await supabase
     .from('links')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', user.id)
     .single()
 
@@ -32,6 +33,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
+  const { id } = await params
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -53,8 +55,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
   const { data, error } = await supabase
     .from('links')
-    .update(validation.data)
-    .eq('id', params.id)
+    .update(validation.data!)
+    .eq('id', id)
     .eq('user_id', user.id)
     .select()
     .single()
@@ -70,6 +72,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, { params }: RouteContext) {
+  const { id } = await params
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -80,7 +83,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext) {
   const { error } = await supabase
     .from('links')
     .delete()
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', user.id)
 
   if (error) {

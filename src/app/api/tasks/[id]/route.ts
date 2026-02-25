@@ -3,10 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { validateUpdateTask } from '@/lib/validators/tasks'
 
 interface RouteContext {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(_request: NextRequest, { params }: RouteContext) {
+  const { id } = await params
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -17,7 +18,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   const { data, error } = await supabase
     .from('tasks')
     .select('*, subtasks(*)')
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', user.id)
     .single()
 
@@ -33,6 +34,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
+  const { id } = await params
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -53,15 +55,15 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 
   // Handle completion timestamp
-  const updateData: Record<string, unknown> = { ...validation.data }
-  if ('completed' in validation.data) {
-    updateData.completed_at = validation.data.completed ? new Date().toISOString() : null
+  const updateData: Record<string, unknown> = { ...validation.data! }
+  if ('completed' in validation.data!) {
+    updateData.completed_at = validation.data!.completed ? new Date().toISOString() : null
   }
 
   const { data, error } = await supabase
     .from('tasks')
     .update(updateData)
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', user.id)
     .select()
     .single()
@@ -78,6 +80,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 }
 
 export async function DELETE(_request: NextRequest, { params }: RouteContext) {
+  const { id } = await params
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -88,7 +91,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext) {
   const { error } = await supabase
     .from('tasks')
     .delete()
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', user.id)
 
   if (error) {

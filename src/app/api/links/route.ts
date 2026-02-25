@@ -76,18 +76,18 @@ export async function POST(request: NextRequest) {
   }
 
   // Fetch Open Graph data
-  const ogData = await fetchOpenGraph(validation.data.url)
+  const ogData = await fetchOpenGraph(validation.data!.url)
 
   const { data, error } = await supabase
     .from('links')
     .insert({
       user_id: user.id,
-      url: validation.data.url,
+      url: validation.data!.url,
       title: ogData.title,
       description: ogData.description,
       image: ogData.image,
       favicon: ogData.favicon,
-      tags: validation.data.tags ?? [],
+      tags: validation.data!.tags ?? [],
     })
     .select()
     .single()

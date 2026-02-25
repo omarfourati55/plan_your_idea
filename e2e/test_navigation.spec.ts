@@ -28,8 +28,8 @@ test.describe('Today Page', () => {
 
   test('has desktop sidebar navigation', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
-    await expect(page.locator('aside')).toBeVisible()
-    await expect(page.locator('aside').getByText('DayFlow')).toBeVisible()
+    await expect(page.locator('aside:not([role=dialog])')).toBeVisible()
+    await expect(page.locator('aside:not([role=dialog])').getByText('DayFlow')).toBeVisible()
   })
 
   test('sidebar links are present on desktop', async ({ page }) => {
@@ -244,7 +244,7 @@ test.describe('Responsive Design', () => {
   test('desktop view: sidebar is visible', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 })
     await page.goto('/today')
-    await expect(page.locator('aside')).toBeVisible()
+    await expect(page.locator('aside:not([role=dialog])')).toBeVisible()
   })
 
   test('mobile view: bottom nav is visible', async ({ page }) => {
@@ -252,7 +252,7 @@ test.describe('Responsive Design', () => {
     await page.goto('/today')
     await expect(page.locator('nav.fixed')).toBeVisible()
     // Sidebar should be hidden on mobile
-    const sidebar = page.locator('aside')
+    const sidebar = page.locator('aside:not([role=dialog])')
     await expect(sidebar).not.toBeVisible()
   })
 

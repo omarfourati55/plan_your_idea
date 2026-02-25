@@ -17,11 +17,6 @@ import toast from 'react-hot-toast'
 
 type ViewMode = 'week' | 'month'
 
-const PRIORITY_DOT: Record<string, string> = {
-  high:   'bg-rose-500',
-  medium: 'bg-amber-400',
-  low:    'bg-sky-400',
-}
 
 export default function PlannerPage() {
   const { tasks, loading, fetchTasks, toggleTask, updateTask, deleteTask, createTask } = useTaskStore()

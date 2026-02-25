@@ -1,4 +1,4 @@
-import type { Task, CreateTaskInput, UpdateTaskInput, TaskStatus } from '@/types'
+import type { CreateTaskInput, UpdateTaskInput, TaskStatus } from '@/types'
 import { sanitizeInput } from '@/lib/utils'
 
 export function validateCreateTask(body: unknown): { data: CreateTaskInput; error: null } | { data: null; error: string } {

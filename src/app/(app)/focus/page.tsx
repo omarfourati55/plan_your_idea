@@ -28,6 +28,7 @@ export default function FocusPage() {
   useEffect(() => { fetchTasks() }, [fetchTasks])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTimeLeft(TIMER_CONFIG[mode].minutes * 60)
     setRunning(false)
     if (intervalRef.current) clearInterval(intervalRef.current)

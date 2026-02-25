@@ -25,7 +25,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useTaskStore } from '@/store'
-import { cn, getPriorityColor, getPriorityLabel, getStatusConfig, isTaskComplete } from '@/lib/utils'
+import { cn, getPriorityColor, getPriorityLabel, isTaskComplete } from '@/lib/utils'
 import { StatusBadge } from '@/components/tasks/StatusBadge'
 import { TaskEditDrawer } from '@/components/tasks/TaskEditDrawer'
 import type { Task, TaskStatus } from '@/types'
@@ -99,7 +99,7 @@ export default function TodayPage() {
   function toggleExpanded(id: string) {
     setExpandedTasks((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) { next.delete(id) } else { next.add(id) }
       return next
     })
   }
@@ -401,7 +401,6 @@ function TaskCardBody({
 
   const currentStatus: TaskStatus = task.status ?? (task.completed ? 'done' : 'todo')
   const taskIsDone = isTaskComplete(currentStatus)
-  const statusCfg = getStatusConfig(currentStatus)
 
   async function handleSubtaskSubmit(e: React.FormEvent) {
     e.preventDefault()

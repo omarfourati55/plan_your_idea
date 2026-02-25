@@ -36,15 +36,6 @@ interface LinkState {
   deleteLink: (id: string) => Promise<void>
 }
 
-type AppStore = TaskState & IdeaState & {
-  links: Link[]
-  linkLoading: boolean
-  linkError: string | null
-  fetchLinks: () => Promise<void>
-  createLink: (input: CreateLinkInput) => Promise<Link | null>
-  updateLink: (id: string, input: UpdateLinkInput) => Promise<void>
-  deleteLink: (id: string) => Promise<void>
-}
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

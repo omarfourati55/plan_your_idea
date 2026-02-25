@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ChevronRight, CalendarDays, Lightbulb, Link2, X, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -37,12 +37,11 @@ const slides = [
 ]
 
 export function Onboarding() {
-  const [visible, setVisible] = useState(false)
-  const [step, setStep]       = useState(0)
-
-  useEffect(() => {
-    if (!localStorage.getItem(ONBOARDING_KEY)) setVisible(true)
-  }, [])
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return !localStorage.getItem(ONBOARDING_KEY)
+  })
+  const [step, setStep] = useState(0)
 
   function handleNext() {
     if (step < slides.length - 1) setStep((s) => s + 1)

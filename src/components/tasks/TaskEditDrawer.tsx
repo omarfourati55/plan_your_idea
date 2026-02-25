@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   X, Trash2, Calendar, Clock, Tag, AlignLeft,
-  RefreshCw, Plus, CheckSquare, Square,
+  Plus, CheckSquare, Square,
 } from 'lucide-react'
 import { cn, getStatusConfig } from '@/lib/utils'
-import { StatusBadge } from './StatusBadge'
 import type { Task, TaskStatus, Priority } from '@/types'
 
 const ALL_STATUSES: TaskStatus[] = ['todo', 'in_progress', 'waiting', 'done', 'cancelled']

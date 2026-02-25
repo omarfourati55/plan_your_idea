@@ -5,7 +5,8 @@
       "Bash(npx supabase --version)",
       "Bash(psql --version)",
       "Bash(node --version)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(gh run list --limit 5)"
     ]
   }
 }

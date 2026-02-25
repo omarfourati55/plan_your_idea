@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Plus, X, Link2, Lightbulb, Loader2 } from 'lucide-react'
 import { cn, isValidUrl } from '@/lib/utils'
-import { useTaskStore, useIdeaStore, useLinkStore } from '@/store'
+import { useIdeaStore, useLinkStore } from '@/store'
 import toast from 'react-hot-toast'
 
 export function QuickCaptureFAB() {

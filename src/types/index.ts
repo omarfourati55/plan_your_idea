@@ -97,7 +97,7 @@ export interface CreateIdeaInput {
   tags?: string[]
 }
 
-export interface UpdateIdeaInput extends Partial<CreateIdeaInput> {}
+export type UpdateIdeaInput = Partial<CreateIdeaInput>
 
 export interface CreateLinkInput {
   url: string

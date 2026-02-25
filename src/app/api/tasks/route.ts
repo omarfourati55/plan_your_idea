@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { allowed, remaining } = checkRateLimit(getRateLimitKey(request))
+  const { allowed } = checkRateLimit(getRateLimitKey(request))
   if (!allowed) {
     return NextResponse.json(
       { error: 'Zu viele Anfragen. Bitte warte eine Minute.' },

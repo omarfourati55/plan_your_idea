@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, ArrowRight, Search, Lightbulb } from 'lucide-react'
+import { Plus, Trash2, ArrowRight, Search, Lightbulb, Pencil, X, Tag } from 'lucide-react'
 import { useIdeaStore, useTaskStore } from '@/store'
 import { cn } from '@/lib/utils'
 import type { Idea, IdeaColor } from '@/types'
@@ -27,24 +27,94 @@ const colorOptions: Array<{ value: IdeaColor; dot: string; label: string }> = [
   { value: 'purple',  dot: 'bg-violet-400',          label: 'Lila'     },
 ]
 
+function TagChips({
+  tags, tagInput, onTagInput, onAddTag, onRemoveTag,
+}: {
+  tags: string[]
+  tagInput: string
+  onTagInput: (v: string) => void
+  onAddTag: () => void
+  onRemoveTag: (t: string) => void
+}) {
+  return (
+    <div>
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {tags.map((t) => (
+            <span
+              key={t}
+              className="inline-flex items-center gap-1 bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 rounded-full px-2.5 py-0.5 text-xs font-medium"
+            >
+              {t}
+              <button
+                type="button"
+                onClick={() => onRemoveTag(t)}
+                className="hover:text-rose-500 transition-colors ml-0.5"
+                aria-label={`Tag ${t} entfernen`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      {tags.length < 10 && (
+        <div className="flex gap-2">
+          <input
+            value={tagInput}
+            onChange={(e) => onTagInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); onAddTag() }
+              if (e.key === ',')     { e.preventDefault(); onAddTag() }
+            }}
+            placeholder="Tag hinzufügen..."
+            className="flex-1 bg-muted/50 border border-border/50 rounded-xl px-3 py-1.5 text-xs outline-none focus:border-violet-500/50 transition-colors"
+            maxLength={50}
+          />
+          <button
+            type="button"
+            onClick={onAddTag}
+            disabled={!tagInput.trim()}
+            className="px-3 py-1.5 bg-muted border border-border/50 rounded-xl hover:bg-accent disabled:opacity-40 transition text-xs"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function IdeasPage() {
-  const { ideas, loading, fetchIdeas, createIdea, deleteIdea, convertIdeaToTask } = useIdeaStore()
+  const { ideas, loading, fetchIdeas, createIdea, updateIdea, deleteIdea, convertIdeaToTask } = useIdeaStore()
   const fetchTasks = useTaskStore((s) => s.fetchTasks)
-  const [search, setSearch]     = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [title, setTitle]       = useState('')
-  const [content, setContent]   = useState('')
-  const [color, setColor]       = useState<IdeaColor>('default')
-  const [creating, setCreating] = useState(false)
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+
+  const [search, setSearch]         = useState('')
+  const [showForm, setShowForm]     = useState(false)
+  const [title, setTitle]           = useState('')
+  const [content, setContent]       = useState('')
+  const [color, setColor]           = useState<IdeaColor>('default')
+  const [tags, setTags]             = useState<string[]>([])
+  const [tagInput, setTagInput]     = useState('')
+  const [creating, setCreating]     = useState(false)
+  const [deleteConfirm, setDeleteConfirm]   = useState<string | null>(null)
+  const [editingIdeaId, setEditingIdeaId]   = useState<string | null>(null)
 
   useEffect(() => { fetchIdeas() }, [fetchIdeas])
 
   const filteredIdeas = ideas.filter(
     (i) => !search ||
       i.title.toLowerCase().includes(search.toLowerCase()) ||
-      i.content.toLowerCase().includes(search.toLowerCase())
+      i.content.toLowerCase().includes(search.toLowerCase()) ||
+      i.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()))
   )
+
+  function addTag(tagList: string[], input: string, setList: (v: string[]) => void, setInput: (v: string) => void) {
+    const t = input.trim()
+    if (!t || tagList.includes(t) || tagList.length >= 10) return
+    setList([...tagList, t])
+    setInput('')
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -52,13 +122,10 @@ export default function IdeasPage() {
     if (!t || creating) return
     setCreating(true)
     try {
-      const idea = await createIdea({ title: t, content: content.trim(), color })
+      const idea = await createIdea({ title: t, content: content.trim(), color, tags })
       if (idea) {
         toast.success('Idee erstellt')
-        setTitle('')
-        setContent('')
-        setColor('default')
-        setShowForm(false)
+        setTitle(''); setContent(''); setColor('default'); setTags([]); setTagInput(''); setShowForm(false)
       }
     } finally {
       setCreating(false)
@@ -78,6 +145,12 @@ export default function IdeasPage() {
       await fetchTasks()
       toast.success('Als Aufgabe gespeichert')
     }
+  }
+
+  async function handleSaveEdit(id: string, updates: { title: string; content: string; color: IdeaColor; tags: string[] }) {
+    await updateIdea(id, updates)
+    setEditingIdeaId(null)
+    toast.success('Idee gespeichert')
   }
 
   return (
@@ -121,6 +194,7 @@ export default function IdeasPage() {
             className="w-full bg-muted/60 border border-border/40 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/15 rounded-xl px-4 py-2.5 text-sm outline-none transition-all resize-none"
             maxLength={10000}
           />
+
           {/* Color picker */}
           <div className="flex items-center gap-2 flex-wrap">
             {colorOptions.map((c) => (
@@ -141,10 +215,25 @@ export default function IdeasPage() {
               </button>
             ))}
           </div>
+
+          {/* Tags */}
+          <div>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Tag className="h-3 w-3" /> Tags
+            </p>
+            <TagChips
+              tags={tags}
+              tagInput={tagInput}
+              onTagInput={setTagInput}
+              onAddTag={() => addTag(tags, tagInput, setTags, setTagInput)}
+              onRemoveTag={(t) => setTags(tags.filter((x) => x !== t))}
+            />
+          </div>
+
           <div className="flex gap-2 justify-end pt-1">
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={() => { setShowForm(false); setTags([]); setTagInput('') }}
               className="px-4 py-2 text-sm rounded-xl border border-border/60 hover:bg-muted transition text-muted-foreground"
             >
               Abbrechen
@@ -200,8 +289,12 @@ export default function IdeasPage() {
             <IdeaCard
               key={idea.id}
               idea={idea}
+              isEditing={editingIdeaId === idea.id}
               onDelete={handleDelete}
               onConvert={handleConvert}
+              onEdit={(i) => { setEditingIdeaId(i.id); setDeleteConfirm(null) }}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={() => setEditingIdeaId(null)}
               deleteConfirm={deleteConfirm}
               onCancelDelete={() => setDeleteConfirm(null)}
             />
@@ -213,19 +306,131 @@ export default function IdeasPage() {
 }
 
 function IdeaCard({
-  idea,
-  onDelete,
-  onConvert,
-  deleteConfirm,
-  onCancelDelete,
+  idea, isEditing,
+  onDelete, onConvert, onEdit, onSaveEdit, onCancelEdit,
+  deleteConfirm, onCancelDelete,
 }: {
   idea: Idea
+  isEditing: boolean
   onDelete: (id: string) => void
   onConvert: (id: string) => void
+  onEdit: (idea: Idea) => void
+  onSaveEdit: (id: string, updates: { title: string; content: string; color: IdeaColor; tags: string[] }) => Promise<void>
+  onCancelEdit: () => void
   deleteConfirm: string | null
   onCancelDelete: () => void
 }) {
   const isConfirming = deleteConfirm === idea.id
+
+  const [editTitle, setEditTitle]       = useState(idea.title)
+  const [editContent, setEditContent]   = useState(idea.content)
+  const [editColor, setEditColor]       = useState<IdeaColor>(idea.color)
+  const [editTags, setEditTags]         = useState<string[]>(idea.tags)
+  const [editTagInput, setEditTagInput] = useState('')
+  const [saving, setSaving]             = useState(false)
+
+  useEffect(() => {
+    if (isEditing) {
+      setEditTitle(idea.title)
+      setEditContent(idea.content)
+      setEditColor(idea.color)
+      setEditTags(idea.tags)
+      setEditTagInput('')
+    }
+  }, [isEditing]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function addEditTag() {
+    const t = editTagInput.trim()
+    if (!t || editTags.includes(t) || editTags.length >= 10) return
+    setEditTags((prev) => [...prev, t])
+    setEditTagInput('')
+  }
+
+  async function handleSave() {
+    if (!editTitle.trim() || saving) return
+    setSaving(true)
+    try {
+      await onSaveEdit(idea.id, {
+        title:   editTitle.trim(),
+        content: editContent.trim(),
+        color:   editColor,
+        tags:    editTags,
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (isEditing) {
+    return (
+      <div className={cn(
+        'rounded-2xl border p-4 mb-4 break-inside-avoid space-y-3 ring-2 ring-violet-500/40',
+        colorClasses[editColor]
+      )}>
+        <input
+          value={editTitle}
+          onChange={(e) => setEditTitle(e.target.value)}
+          className="w-full bg-transparent font-semibold text-sm outline-none border-b border-border/40 focus:border-violet-500/50 pb-1 transition-colors"
+          placeholder="Titel..."
+          maxLength={500}
+          autoFocus
+        />
+        <textarea
+          value={editContent}
+          onChange={(e) => setEditContent(e.target.value)}
+          placeholder="Details..."
+          rows={3}
+          className="w-full bg-transparent text-xs text-muted-foreground outline-none resize-none leading-relaxed"
+          maxLength={10000}
+        />
+
+        {/* Color picker (compact dots) */}
+        <div className="flex gap-2 items-center">
+          {colorOptions.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              onClick={() => setEditColor(c.value)}
+              className={cn(
+                'w-5 h-5 rounded-full border-2 transition-all',
+                c.dot,
+                editColor === c.value ? 'border-foreground scale-110' : 'border-transparent opacity-50 hover:opacity-80'
+              )}
+              title={c.label}
+              aria-label={c.label}
+            />
+          ))}
+        </div>
+
+        {/* Tags */}
+        <TagChips
+          tags={editTags}
+          tagInput={editTagInput}
+          onTagInput={setEditTagInput}
+          onAddTag={addEditTag}
+          onRemoveTag={(t) => setEditTags(editTags.filter((x) => x !== t))}
+        />
+
+        <div className="flex gap-2 justify-end pt-1">
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="px-3 py-1.5 rounded-xl border border-border/60 text-xs hover:bg-muted transition text-muted-foreground"
+          >
+            Abbrechen
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!editTitle.trim() || saving}
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-xs font-medium hover:brightness-110 disabled:opacity-50 transition-all"
+          >
+            {saving ? 'Speichert...' : 'Speichern'}
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={cn(
@@ -257,6 +462,14 @@ function IdeaCard({
           ) : (
             <>
               <button
+                onClick={() => onEdit(idea)}
+                className="p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition text-muted-foreground hover:text-foreground"
+                title="Bearbeiten"
+                aria-label="Idee bearbeiten"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+              <button
                 onClick={() => onConvert(idea.id)}
                 className="p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition text-muted-foreground hover:text-foreground"
                 title="Als Aufgabe speichern"
@@ -286,8 +499,8 @@ function IdeaCard({
       {idea.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-3">
           {idea.tags.map((tag) => (
-            <span key={tag} className="text-xs bg-black/5 dark:bg-white/10 rounded-full px-2 py-0.5">
-              {tag}
+            <span key={tag} className="inline-flex items-center gap-1 text-xs bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400 rounded-full px-2 py-0.5 font-medium">
+              <Tag className="h-2.5 w-2.5" />{tag}
             </span>
           ))}
         </div>

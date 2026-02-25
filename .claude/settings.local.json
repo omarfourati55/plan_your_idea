@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx supabase --version)",
+      "Bash(psql --version)",
+      "Bash(node --version)",
+      "Bash(node -e \":*)"
     ]
   }
 }

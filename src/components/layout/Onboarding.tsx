@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronRight, CalendarDays, Lightbulb, Link2, X } from 'lucide-react'
+import { ChevronRight, CalendarDays, Lightbulb, Link2, X, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const ONBOARDING_KEY = 'dayflow_onboarding_done'
@@ -10,46 +10,43 @@ const slides = [
   {
     icon: CalendarDays,
     title: 'Dein Tag, strukturiert',
-    description:
-      'Plane deinen Tag mit der Tagesansicht. Erstelle Aufgaben in Sekunden, setze Prioritäten und behalte den Überblick.',
-    color: 'text-blue-500',
-    bg: 'bg-blue-50 dark:bg-blue-950/30',
+    description: 'Plane deinen Tag mit der Tagesansicht. Erstelle Aufgaben in Sekunden, setze Prioritäten und behalte den Überblick.',
+    gradient: 'from-violet-500 to-fuchsia-500',
+    bg: 'from-violet-500/10 to-fuchsia-500/10',
+    border: 'border-violet-500/20',
+    iconColor: 'text-violet-500',
   },
   {
     icon: Lightbulb,
-    title: 'Ideen festhalten',
-    description:
-      'Erfasse Ideen als Notizen, bevor sie verloren gehen. Organisiere sie mit Farben und Tags. Konvertiere sie mit einem Klick in Aufgaben.',
-    color: 'text-yellow-500',
-    bg: 'bg-yellow-50 dark:bg-yellow-950/30',
+    title: 'Ideen sofort festhalten',
+    description: 'Erfasse Ideen als Notizen, bevor sie verloren gehen. Organisiere sie mit Farben und konvertiere sie mit einem Klick in Aufgaben.',
+    gradient: 'from-amber-500 to-orange-500',
+    bg: 'from-amber-500/10 to-orange-500/10',
+    border: 'border-amber-500/20',
+    iconColor: 'text-amber-500',
   },
   {
     icon: Link2,
-    title: 'Links & Artikel sammeln',
-    description:
-      'Speichere interessante Links mit Vorschaubild und Beschreibung. Markiere sie als "Später lesen" und behalte deinen Lesestapel im Blick.',
-    color: 'text-green-500',
-    bg: 'bg-green-50 dark:bg-green-950/30',
+    title: 'Links clever sammeln',
+    description: 'Speichere Links mit Vorschaubild. Markiere sie als "Später lesen" und behalte deinen Lesestapel im Blick.',
+    gradient: 'from-sky-500 to-blue-500',
+    bg: 'from-sky-500/10 to-blue-500/10',
+    border: 'border-sky-500/20',
+    iconColor: 'text-sky-500',
   },
 ]
 
 export function Onboarding() {
   const [visible, setVisible] = useState(false)
-  const [step, setStep] = useState(0)
+  const [step, setStep]       = useState(0)
 
   useEffect(() => {
-    const done = localStorage.getItem(ONBOARDING_KEY)
-    if (!done) {
-      setVisible(true)
-    }
+    if (!localStorage.getItem(ONBOARDING_KEY)) setVisible(true)
   }, [])
 
   function handleNext() {
-    if (step < slides.length - 1) {
-      setStep((s) => s + 1)
-    } else {
-      handleDone()
-    }
+    if (step < slides.length - 1) setStep((s) => s + 1)
+    else handleDone()
   }
 
   function handleDone() {
@@ -60,59 +57,70 @@ export function Onboarding() {
   if (!visible) return null
 
   const current = slides[step]
-  const Icon = current.icon
+  const Icon    = current.icon
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-card rounded-2xl border shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95">
-        {/* Skip button */}
-        <div className="flex justify-end p-3">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
+      <div className="bg-card rounded-3xl border border-border/60 shadow-2xl max-w-sm w-full overflow-hidden animate-scale-in">
+
+        {/* Gradient top bar */}
+        <div className={cn('h-1 bg-gradient-to-r', current.gradient)} />
+
+        {/* Skip */}
+        <div className="flex items-center justify-between px-5 pt-4">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span className="font-semibold">DayFlow</span>
+          </div>
           <button
             onClick={handleDone}
-            className="text-muted-foreground hover:text-foreground transition p-1 rounded-lg hover:bg-muted"
+            className="text-muted-foreground hover:text-foreground transition p-1.5 rounded-xl hover:bg-muted"
             aria-label="Onboarding überspringen"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Slide content */}
-        <div className="px-8 pb-8">
-          <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center mb-6', current.bg)}>
-            <Icon className={cn('h-8 w-8', current.color)} />
+        {/* Content */}
+        <div className="px-8 pt-6 pb-6">
+          <div className={cn(
+            'w-16 h-16 rounded-3xl bg-gradient-to-br border flex items-center justify-center mb-6',
+            current.bg, current.border
+          )}>
+            <Icon className={cn('h-8 w-8', current.iconColor)} />
           </div>
-
-          <h2 className="text-xl font-bold mb-3">{current.title}</h2>
+          <h2 className="text-xl font-bold mb-3 leading-tight">{current.title}</h2>
           <p className="text-muted-foreground text-sm leading-relaxed">{current.description}</p>
         </div>
 
-        {/* Progress dots + button */}
+        {/* Progress + button */}
         <div className="px-8 pb-8 flex items-center justify-between">
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setStep(i)}
                 className={cn(
-                  'w-2 h-2 rounded-full transition-all',
-                  i === step ? 'bg-primary w-6' : 'bg-muted-foreground/30'
+                  'h-1.5 rounded-full transition-all duration-300',
+                  i === step
+                    ? `w-6 bg-gradient-to-r ${current.gradient}`
+                    : 'w-1.5 bg-muted-foreground/20'
                 )}
                 aria-label={`Schritt ${i + 1}`}
               />
             ))}
           </div>
-
           <button
             onClick={handleNext}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
+            className={cn(
+              'flex items-center gap-2 text-white px-5 py-2.5 rounded-2xl text-sm font-semibold shadow-lg transition-all hover:brightness-110 active:scale-95',
+              `bg-gradient-to-r ${current.gradient}`
+            )}
           >
             {step < slides.length - 1 ? (
-              <>
-                Weiter
-                <ChevronRight className="h-4 w-4" />
-              </>
+              <><span>Weiter</span><ChevronRight className="h-4 w-4" /></>
             ) : (
-              'Los geht\'s!'
+              <span>Los geht&apos;s!</span>
             )}
           </button>
         </div>

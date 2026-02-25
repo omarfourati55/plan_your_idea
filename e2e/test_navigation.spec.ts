@@ -13,7 +13,8 @@ test.describe('Today Page', () => {
   })
 
   test('has page title "Heute"', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Heute' })).toBeVisible()
+    // h1 shows a greeting like "Guten Morgen 👋" – the main content h1, not sidebar
+    await expect(page.getByRole('heading', { name: /Guten (Morgen|Tag|Abend)/ })).toBeVisible()
   })
 
   test('shows today\'s date', async ({ page }) => {
@@ -134,13 +135,13 @@ test.describe('Onboarding', () => {
       localStorage.removeItem('dayflow_onboarding_done')
     })
     await page.goto('/today')
-    await expect(page.getByText('Dein Tag, strukturiert')).toBeVisible()
-    await page.getByText('Weiter').click()
-    await expect(page.getByText('Ideen festhalten')).toBeVisible()
-    await page.getByText('Weiter').click()
-    await expect(page.getByText('Links & Artikel sammeln')).toBeVisible()
-    await page.getByText("Los geht's!").click()
-    await expect(page.getByText('Links & Artikel sammeln')).not.toBeVisible()
+    await expect(page.getByText('Dein Tag, strukturiert')).toBeVisible({ timeout: 10000 })
+    await page.getByRole('button', { name: 'Weiter' }).click()
+    await expect(page.getByText('Ideen sofort festhalten')).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: 'Weiter' }).click()
+    await expect(page.getByText('Links clever sammeln')).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: "Los geht's!" }).click()
+    await expect(page.getByText('Links clever sammeln')).not.toBeVisible()
   })
 
   test('does not show onboarding when already completed', async ({ page }) => {
@@ -160,11 +161,11 @@ test.describe('Ideas Page', () => {
   })
 
   test('has Neue Idee button', async ({ page }) => {
-    await expect(page.getByText('Neue Idee')).toBeVisible()
+    await expect(page.locator('button').filter({ hasText: 'Neue Idee' })).toBeVisible()
   })
 
   test('shows create form when Neue Idee is clicked', async ({ page }) => {
-    await page.getByText('Neue Idee').click()
+    await page.locator('button').filter({ hasText: 'Neue Idee' }).click()
     await expect(page.locator('input[placeholder*="Titel"]')).toBeVisible()
     await expect(page.locator('textarea')).toBeVisible()
   })
@@ -174,7 +175,8 @@ test.describe('Ideas Page', () => {
   })
 
   test('shows empty state when no ideas', async ({ page }) => {
-    await expect(page.getByText('Noch keine Ideen')).toBeVisible()
+    // Use the empty-state heading (font-semibold text-lg) not the header subtitle
+    await expect(page.getByText('Noch keine Ideen', { exact: true }).last()).toBeVisible({ timeout: 10000 })
   })
 })
 
@@ -196,8 +198,8 @@ test.describe('Links Page', () => {
   })
 
   test('has status filter buttons', async ({ page }) => {
-    // Use more specific selector for the filter buttons (in a flex container)
-    const filterBar = page.locator('.flex.rounded-lg.border').first()
+    // Filter buttons are in a flex container with rounded-xl border (user redesign)
+    const filterBar = page.locator('.flex.rounded-xl.border').first()
     await expect(filterBar.getByText('Alle', { exact: true })).toBeVisible()
     await expect(filterBar.getByText('Ungelesen', { exact: true })).toBeVisible()
     await expect(filterBar.getByText('Später', { exact: true })).toBeVisible()
@@ -205,7 +207,8 @@ test.describe('Links Page', () => {
   })
 
   test('shows empty state when no links', async ({ page }) => {
-    await expect(page.getByText('Keine Links gefunden')).toBeVisible()
+    // Use exact match for the empty-state heading, not the header subtitle "Noch keine Links gespeichert"
+    await expect(page.getByText('Noch keine Links', { exact: true })).toBeVisible({ timeout: 10000 })
   })
 })
 
@@ -256,6 +259,7 @@ test.describe('Responsive Design', () => {
   test('tablet view rendering', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 })
     await page.goto('/today')
-    await expect(page.getByRole('heading', { name: 'Heute' })).toBeVisible()
+    // h1 shows greeting like "Guten Morgen 👋" – verify it is visible
+    await expect(page.getByRole('heading', { name: /Guten (Morgen|Tag|Abend)/ })).toBeVisible()
   })
 })

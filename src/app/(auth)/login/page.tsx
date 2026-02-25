@@ -48,7 +48,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-card rounded-2xl border p-8 shadow-sm">
+    <div className="bg-card rounded-2xl border border-border/60 p-8 shadow-card">
       <h2 className="text-xl font-semibold mb-6">Anmelden</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -62,7 +62,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             placeholder="name@beispiel.de"
-            className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 ring-primary"
+            className="w-full bg-muted/60 border border-border/40 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/15 rounded-xl px-4 py-3 text-sm outline-none transition-all"
             disabled={loading}
           />
         </div>
@@ -83,7 +83,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 ring-primary pr-12"
+              className="w-full bg-muted/60 border border-border/40 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/15 rounded-xl px-4 py-3 text-sm outline-none transition-all pr-12"
               disabled={loading}
             />
             <button
@@ -99,7 +99,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading || !email || !password}
-          className="w-full bg-primary text-primary-foreground rounded-lg py-3 text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+          className="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-xl py-3 text-sm font-semibold hover:brightness-110 disabled:opacity-50 transition-all shadow-md shadow-violet-500/25 disabled:shadow-none"
         >
           {loading ? 'Anmelden...' : 'Anmelden'}
         </button>
@@ -113,7 +113,7 @@ export default function LoginPage() {
 
       <button
         onClick={handleGoogleLogin}
-        className="w-full border rounded-lg py-3 text-sm font-medium hover:bg-muted transition flex items-center justify-center gap-2"
+        className="w-full border border-border/60 rounded-xl py-3 text-sm font-medium hover:bg-muted transition-all flex items-center justify-center gap-2"
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>

@@ -9,25 +9,23 @@ import toast from 'react-hot-toast'
 
 type TimerMode = 'work' | 'shortBreak' | 'longBreak'
 
-const TIMER_CONFIG: Record<TimerMode, { label: string; minutes: number; color: string }> = {
-  work: { label: 'Fokus', minutes: 25, color: 'text-red-500' },
-  shortBreak: { label: 'Kurze Pause', minutes: 5, color: 'text-green-500' },
-  longBreak: { label: 'Lange Pause', minutes: 15, color: 'text-blue-500' },
+const TIMER_CONFIG: Record<TimerMode, { label: string; minutes: number; accent: string; ring: string }> = {
+  work:       { label: 'Fokus',        minutes: 25, accent: 'from-rose-500 to-orange-500',  ring: 'text-rose-500' },
+  shortBreak: { label: 'Kurze Pause',  minutes: 5,  accent: 'from-emerald-500 to-teal-500', ring: 'text-emerald-500' },
+  longBreak:  { label: 'Lange Pause',  minutes: 15, accent: 'from-sky-500 to-blue-500',     ring: 'text-sky-500' },
 }
 
 export default function FocusPage() {
   const { tasks, fetchTasks, toggleTask } = useTaskStore()
-  const [mode, setMode] = useState<TimerMode>('work')
-  const [timeLeft, setTimeLeft] = useState(TIMER_CONFIG.work.minutes * 60)
-  const [running, setRunning] = useState(false)
-  const [cycles, setCycles] = useState(0)
+  const [mode, setMode]                   = useState<TimerMode>('work')
+  const [timeLeft, setTimeLeft]           = useState(TIMER_CONFIG.work.minutes * 60)
+  const [running, setRunning]             = useState(false)
+  const [cycles, setCycles]               = useState(0)
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  const audioCtxRef = useRef<AudioContext | null>(null)
+  const intervalRef  = useRef<NodeJS.Timeout | null>(null)
+  const audioCtxRef  = useRef<AudioContext | null>(null)
 
-  useEffect(() => {
-    fetchTasks()
-  }, [fetchTasks])
+  useEffect(() => { fetchTasks() }, [fetchTasks])
 
   useEffect(() => {
     setTimeLeft(TIMER_CONFIG[mode].minutes * 60)
@@ -37,22 +35,18 @@ export default function FocusPage() {
 
   const playBeep = useCallback(() => {
     try {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioContext()
-      }
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext()
       const ctx = audioCtxRef.current
-      const oscillator = ctx.createOscillator()
-      const gainNode = ctx.createGain()
-      oscillator.connect(gainNode)
-      gainNode.connect(ctx.destination)
-      oscillator.frequency.value = 880
-      gainNode.gain.setValueAtTime(0.3, ctx.currentTime)
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
-      oscillator.start(ctx.currentTime)
-      oscillator.stop(ctx.currentTime + 0.5)
-    } catch {
-      // AudioContext might not be available
-    }
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = 880
+      gain.gain.setValueAtTime(0.3, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
+      osc.start(ctx.currentTime)
+      osc.stop(ctx.currentTime + 0.5)
+    } catch { /* AudioContext unavailable */ }
   }, [])
 
   useEffect(() => {
@@ -60,76 +54,67 @@ export default function FocusPage() {
       if (intervalRef.current) clearInterval(intervalRef.current)
       return
     }
-
     intervalRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(intervalRef.current!)
           setRunning(false)
           playBeep()
-
           if (mode === 'work') {
-            const newCycles = cycles + 1
-            setCycles(newCycles)
-            toast.success(`Pomodoro ${newCycles} abgeschlossen! Zeit für eine Pause.`)
-            setMode(newCycles % 4 === 0 ? 'longBreak' : 'shortBreak')
+            const next = cycles + 1
+            setCycles(next)
+            toast.success(`Pomodoro ${next} geschafft! 🎉`)
+            setMode(next % 4 === 0 ? 'longBreak' : 'shortBreak')
           } else {
-            toast.success('Pause beendet! Weiter geht\'s.')
+            toast.success('Pause vorbei – weiter geht\'s!')
             setMode('work')
           }
-
           return 0
         }
         return prev - 1
       })
     }, 1000)
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [running, mode, cycles, playBeep])
 
-  function handleStartPause() {
-    setRunning((r) => !r)
-  }
+  const minutes  = Math.floor(timeLeft / 60)
+  const seconds  = timeLeft % 60
+  const total    = TIMER_CONFIG[mode].minutes * 60
+  const progress = (total - timeLeft) / total
+  const circumference = 2 * Math.PI * 45
 
-  function handleReset() {
-    setRunning(false)
-    setTimeLeft(TIMER_CONFIG[mode].minutes * 60)
-    if (intervalRef.current) clearInterval(intervalRef.current)
-  }
-
-  const minutes = Math.floor(timeLeft / 60)
-  const seconds = timeLeft % 60
-  const totalSeconds = TIMER_CONFIG[mode].minutes * 60
-  const progress = ((totalSeconds - timeLeft) / totalSeconds) * 100
-
-  const todayStr = format(new Date(), 'yyyy-MM-dd')
-  const todayTasks = tasks.filter((t) => t.due_date === todayStr && !t.completed && !t.parent_id)
+  const todayStr    = format(new Date(), 'yyyy-MM-dd')
+  const todayTasks  = tasks.filter((t) => t.due_date === todayStr && !t.completed && !t.parent_id)
   const currentTask = tasks.find((t) => t.id === currentTaskId)
+  const config      = TIMER_CONFIG[mode]
 
   return (
-    <div className="max-w-lg mx-auto p-4 md:p-8">
+    <div className="max-w-lg mx-auto p-4 md:p-8 animate-fade-in">
+      {/* Header */}
       <header className="mb-8">
         <h1 className="text-3xl font-bold">Fokus-Modus</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {cycles} Pomodoros heute abgeschlossen
+          {cycles > 0
+            ? `${cycles} Pomodoro${cycles !== 1 ? 's' : ''} heute geschafft 🔥`
+            : 'Starte deinen ersten Pomodoro'}
         </p>
       </header>
 
       {/* Mode selector */}
-      <div className="flex rounded-xl border overflow-hidden mb-8">
-        {(Object.entries(TIMER_CONFIG) as Array<[TimerMode, typeof TIMER_CONFIG.work]>).map(([m, config]) => (
+      <div className="flex rounded-2xl border border-border/60 overflow-hidden mb-8 bg-card">
+        {(Object.entries(TIMER_CONFIG) as Array<[TimerMode, typeof TIMER_CONFIG.work]>).map(([m, cfg]) => (
           <button
             key={m}
             onClick={() => !running && setMode(m)}
             disabled={running}
             className={cn(
-              'flex-1 py-3 text-sm font-medium transition',
-              mode === m ? 'bg-primary text-primary-foreground' : 'hover:bg-muted disabled:opacity-50'
+              'flex-1 py-3 text-xs font-semibold transition-all duration-200',
+              mode === m
+                ? `bg-gradient-to-r ${cfg.accent} text-white shadow-sm`
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40'
             )}
           >
-            {config.label}
+            {cfg.label}
           </button>
         ))}
       </div>
@@ -137,65 +122,84 @@ export default function FocusPage() {
       {/* Timer circle */}
       <div className="flex flex-col items-center mb-8">
         <div className="relative w-64 h-64">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+          {/* Glow background */}
+          <div className={cn(
+            'absolute inset-8 rounded-full blur-2xl opacity-20 transition-opacity duration-1000',
+            `bg-gradient-to-br ${config.accent}`,
+            running && 'opacity-30'
+          )} />
+
+          <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 100 100">
+            {/* Track */}
+            <circle cx="50" cy="50" r="45" fill="none"
+              stroke="hsl(var(--muted))" strokeWidth="3.5" />
+            {/* Progress */}
             <circle
-              cx="50" cy="50" r="45"
-              fill="none"
-              stroke="hsl(var(--muted))"
-              strokeWidth="4"
-            />
-            <circle
-              cx="50" cy="50" r="45"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
+              cx="50" cy="50" r="45" fill="none"
+              stroke="url(#timerGrad)"
+              strokeWidth="3.5"
               strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 45}`}
-              strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
-              className={cn('transition-all duration-1000', TIMER_CONFIG[mode].color)}
+              strokeDasharray={circumference}
+              strokeDashoffset={circumference * (1 - progress)}
+              className="transition-all duration-1000"
             />
+            <defs>
+              <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"   stopColor={mode === 'work' ? '#f43f5e' : mode === 'shortBreak' ? '#10b981' : '#0ea5e9'} />
+                <stop offset="100%" stopColor={mode === 'work' ? '#f97316' : mode === 'shortBreak' ? '#14b8a6' : '#3b82f6'} />
+              </linearGradient>
+            </defs>
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-5xl font-bold tabular-nums">
+
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+            <span className="text-5xl font-bold tabular-nums tracking-tight">
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </span>
-            <span className="text-sm text-muted-foreground mt-1">{TIMER_CONFIG[mode].label}</span>
+            <span className="text-xs text-muted-foreground mt-1.5 font-medium">{config.label}</span>
           </div>
         </div>
 
         {/* Controls */}
         <div className="flex items-center gap-4 mt-6">
           <button
-            onClick={handleReset}
-            className="p-3 rounded-full border hover:bg-muted transition"
-            aria-label="Timer zurücksetzen"
+            onClick={() => { setRunning(false); setTimeLeft(total); if (intervalRef.current) clearInterval(intervalRef.current) }}
+            className="p-3 rounded-2xl border border-border/60 hover:bg-muted transition-all bg-card"
+            aria-label="Zurücksetzen"
           >
-            <RotateCcw className="h-5 w-5" />
+            <RotateCcw className="h-5 w-5 text-muted-foreground" />
           </button>
+
           <button
-            onClick={handleStartPause}
-            className="p-5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition shadow-lg"
-            aria-label={running ? 'Timer pausieren' : 'Timer starten'}
-          >
-            {running ? <Pause className="h-7 w-7" /> : <Play className="h-7 w-7 ml-0.5" />}
-          </button>
-          <div className="p-3 rounded-full border">
-            {mode === 'work' ? (
-              <Brain className="h-5 w-5 text-red-500" />
-            ) : (
-              <Coffee className="h-5 w-5 text-green-500" />
+            onClick={() => setRunning((r) => !r)}
+            className={cn(
+              'p-5 rounded-2xl text-white shadow-lg transition-all hover:scale-105 active:scale-95',
+              `bg-gradient-to-br ${config.accent}`,
+              `shadow-[hsl(var(--primary)/0.3)]`
             )}
+            aria-label={running ? 'Pausieren' : 'Starten'}
+          >
+            {running
+              ? <Pause className="h-7 w-7" />
+              : <Play  className="h-7 w-7 ml-0.5" />
+            }
+          </button>
+
+          <div className="p-3 rounded-2xl border border-border/60 bg-card">
+            {mode === 'work'
+              ? <Brain  className="h-5 w-5 text-rose-500" />
+              : <Coffee className="h-5 w-5 text-emerald-500" />
+            }
           </div>
         </div>
       </div>
 
       {/* Current task */}
       <div className="mb-6">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+        <h2 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
           Aktuelle Aufgabe
         </h2>
         {currentTask ? (
-          <div className="p-4 rounded-xl border bg-card flex items-center justify-between gap-3">
+          <div className="p-4 rounded-2xl border border-violet-500/30 bg-gradient-to-r from-violet-500/5 to-fuchsia-500/5 flex items-center justify-between gap-3">
             <p className="font-medium text-sm">{currentTask.title}</p>
             <button
               onClick={() => toggleTask(currentTask.id)}
@@ -206,15 +210,15 @@ export default function FocusPage() {
             </button>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Keine Aufgabe ausgewählt</p>
+          <p className="text-sm text-muted-foreground italic">Wähle eine Aufgabe unten aus</p>
         )}
       </div>
 
-      {/* Today task list */}
+      {/* Task list */}
       {todayTasks.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Aufgaben für heute ({todayTasks.length})
+          <h2 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+            Aufgaben heute · {todayTasks.length}
           </h2>
           <div className="space-y-2">
             {todayTasks.map((task) => (
@@ -222,10 +226,10 @@ export default function FocusPage() {
                 key={task.id}
                 onClick={() => setCurrentTaskId(task.id === currentTaskId ? null : task.id)}
                 className={cn(
-                  'w-full text-left px-4 py-3 rounded-lg border text-sm transition',
+                  'w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-150',
                   task.id === currentTaskId
-                    ? 'border-primary bg-primary/5 font-medium'
-                    : 'bg-card hover:bg-accent/50'
+                    ? 'border-violet-500/40 bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 text-foreground'
+                    : 'border-border/60 bg-card hover:border-violet-500/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground'
                 )}
               >
                 {task.title}

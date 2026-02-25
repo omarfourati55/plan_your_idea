@@ -26,6 +26,8 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: 'Idee nicht gefunden' }, { status: 404 })
   }
 
+  const todayStr = new Date().toISOString().slice(0, 10)
+
   // Create task from idea
   const { data: task, error: taskError } = await supabase
     .from('tasks')
@@ -35,6 +37,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
       description: idea.content || null,
       priority: 'medium',
       tags: idea.tags,
+      due_date: todayStr,
     })
     .select()
     .single()

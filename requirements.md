@@ -69,6 +69,33 @@
 - Unteraufgaben (Checkliste innerhalb einer Aufgabe)
 - Aufgaben zwischen Tagen verschieben ("auf morgen schieben")
 
+#### 4.1.3 Aufgaben bearbeiten & Status-System *(Priorität 1 – Extended)*
+
+**Inline-Bearbeitung:**
+- Klick auf Bleistift-Icon → öffnet Detail-Drawer von rechts
+- Alle Felder editierbar: Titel, Beschreibung, Datum, Uhrzeit, Priorität, Tags, Status
+- Speichern-Button im Drawer; `Esc` schließt ohne Speichern
+
+**Reiches Status-System (Kanban-inspiriert):**
+
+| Status | Icon | Farbe | Bedeutung |
+|---|---|---|---|
+| `todo` | ○ | Grau | Offen, noch nicht begonnen |
+| `in_progress` | ◉ | Violett (pulsierend) | Gerade in Bearbeitung |
+| `waiting` | ⏸ | Orange | Blockiert / wartet auf etwas |
+| `done` | ✓ | Grün | Erledigt |
+| `cancelled` | ✗ | Rot | Abgebrochen |
+
+- Status-Badge auf jeder Aufgaben-Karte (farbige Pille)
+- Klick auf Status-Badge → Inline-Dropdown mit allen Optionen
+- Status `done` setzt automatisch `completed = true` (rückwärtskompatibel)
+- Offen-Bereich: `todo` + `in_progress` + `waiting`; Erledigt-Bereich: `done` + `cancelled`
+
+**Task Detail-Drawer (Slide-in von rechts):**
+- Öffnet sich beim Klick auf Bleistift-Icon
+- Sections: Titel, Status-Wähler (große Kacheln), Priorität, Datum/Uhrzeit, Beschreibung, Tags, Unteraufgaben
+- Smooth Slide-Animation, Backdrop-Overlay
+
 #### 4.1.3 Kalenderansicht
 
 - Monats-, Wochen- und Tagesansicht wechselbar

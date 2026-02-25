@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { format, isToday, isTomorrow, isYesterday, parseISO, startOfDay, endOfDay } from 'date-fns'
-import type { Priority } from '@/types'
+import type { Priority, TaskStatus } from '@/types'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -103,6 +103,32 @@ export function groupTasksByDate(tasks: Array<{ due_date: string | null; [key: s
   }
 
   return groups
+}
+
+export function getStatusConfig(status: TaskStatus): {
+  label: string
+  color: string
+  bgColor: string
+  borderColor: string
+  icon: string
+  pulse: boolean
+} {
+  switch (status) {
+    case 'todo':
+      return { label: 'Offen', color: 'text-muted-foreground', bgColor: 'bg-muted/60', borderColor: 'border-border/60', icon: '○', pulse: false }
+    case 'in_progress':
+      return { label: 'In Arbeit', color: 'text-violet-500', bgColor: 'bg-violet-500/10', borderColor: 'border-violet-500/30', icon: '◉', pulse: true }
+    case 'waiting':
+      return { label: 'Wartet', color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30', icon: '⏸', pulse: false }
+    case 'done':
+      return { label: 'Erledigt', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30', icon: '✓', pulse: false }
+    case 'cancelled':
+      return { label: 'Abgebrochen', color: 'text-rose-500', bgColor: 'bg-rose-500/10', borderColor: 'border-rose-500/30', icon: '✗', pulse: false }
+  }
+}
+
+export function isTaskComplete(status: TaskStatus): boolean {
+  return status === 'done' || status === 'cancelled'
 }
 
 export function sanitizeInput(input: string): string {

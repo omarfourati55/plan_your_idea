@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { Task, Idea, Link, CreateTaskInput, UpdateTaskInput, CreateIdeaInput, UpdateIdeaInput, CreateLinkInput, UpdateLinkInput } from '@/types'
+import type { Task, Idea, Link, CreateTaskInput, UpdateTaskInput, CreateIdeaInput, UpdateIdeaInput, CreateLinkInput, UpdateLinkInput, TaskStatus } from '@/types'
 
 interface TaskState {
   tasks: Task[]
@@ -11,6 +11,7 @@ interface TaskState {
   updateTask: (id: string, input: UpdateTaskInput) => Promise<void>
   deleteTask: (id: string) => Promise<void>
   toggleTask: (id: string) => Promise<void>
+  updateTaskStatus: (id: string, status: TaskStatus) => Promise<void>
   moveTaskToDate: (id: string, date: string) => Promise<void>
 }
 
@@ -117,7 +118,15 @@ export const useTaskStore = create<TaskState>()(
     toggleTask: async (id) => {
       const task = get().tasks.find((t) => t.id === id)
       if (!task) return
-      await get().updateTask(id, { completed: !task.completed })
+      const currentStatus: TaskStatus = task.status ?? (task.completed ? 'done' : 'todo')
+      const isDone = currentStatus === 'done' || currentStatus === 'cancelled'
+      const newStatus: TaskStatus = isDone ? 'todo' : 'done'
+      await get().updateTask(id, { completed: !isDone, status: newStatus })
+    },
+
+    updateTaskStatus: async (id, status) => {
+      const isDone = status === 'done' || status === 'cancelled'
+      await get().updateTask(id, { status, completed: isDone })
     },
 
     moveTaskToDate: async (id, date) => {

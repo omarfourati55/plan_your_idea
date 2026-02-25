@@ -2,6 +2,7 @@ export type Priority = 'high' | 'medium' | 'low'
 export type RecurringType = 'daily' | 'weekly' | 'custom' | null
 export type ReadStatus = 'unread' | 'read' | 'later'
 export type IdeaColor = 'default' | 'red' | 'yellow' | 'green' | 'blue' | 'purple'
+export type TaskStatus = 'todo' | 'in_progress' | 'waiting' | 'done' | 'cancelled'
 
 export interface Task {
   id: string
@@ -11,6 +12,7 @@ export interface Task {
   due_date: string | null
   due_time: string | null
   priority: Priority
+  status: TaskStatus
   tags: string[]
   completed: boolean
   completed_at: string | null
@@ -73,9 +75,9 @@ export interface User {
 
 export interface CreateTaskInput {
   title: string
-  description?: string
-  due_date?: string
-  due_time?: string
+  description?: string | null
+  due_date?: string | null
+  due_time?: string | null
   priority?: Priority
   tags?: string[]
   recurring?: RecurringType
@@ -85,6 +87,7 @@ export interface CreateTaskInput {
 export interface UpdateTaskInput extends Partial<CreateTaskInput> {
   completed?: boolean
   position?: number
+  status?: TaskStatus
 }
 
 export interface CreateIdeaInput {

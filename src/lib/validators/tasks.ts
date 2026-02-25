@@ -1,4 +1,4 @@
-import type { Task, CreateTaskInput, UpdateTaskInput } from '@/types'
+import type { Task, CreateTaskInput, UpdateTaskInput, TaskStatus } from '@/types'
 import { sanitizeInput } from '@/lib/utils'
 
 export function validateCreateTask(body: unknown): { data: CreateTaskInput; error: null } | { data: null; error: string } {
@@ -115,6 +115,14 @@ export function validateUpdateTask(body: unknown): { data: UpdateTaskInput; erro
     update.tags = Array.isArray(input.tags)
       ? (input.tags as string[]).filter((t) => typeof t === 'string').map(sanitizeInput).slice(0, 20)
       : []
+  }
+
+  if ('status' in input) {
+    const validStatuses: TaskStatus[] = ['todo', 'in_progress', 'waiting', 'done', 'cancelled']
+    if (!validStatuses.includes(input.status as TaskStatus)) {
+      return { data: null, error: 'Ungültiger Status' }
+    }
+    update.status = input.status as TaskStatus
   }
 
   return { data: update, error: null }

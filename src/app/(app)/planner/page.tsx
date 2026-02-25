@@ -10,7 +10,10 @@ import {
 import { de } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react'
 import { useTaskStore } from '@/store'
-import { cn } from '@/lib/utils'
+import { cn, getStatusConfig, isTaskComplete } from '@/lib/utils'
+import { TaskEditDrawer } from '@/components/tasks/TaskEditDrawer'
+import type { Task, TaskStatus } from '@/types'
+import toast from 'react-hot-toast'
 
 type ViewMode = 'week' | 'month'
 
@@ -21,11 +24,36 @@ const PRIORITY_DOT: Record<string, string> = {
 }
 
 export default function PlannerPage() {
-  const { tasks, loading, fetchTasks, toggleTask } = useTaskStore()
+  const { tasks, loading, fetchTasks, toggleTask, updateTask, deleteTask, createTask } = useTaskStore()
   const [view, setView]               = useState<ViewMode>('week')
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   useEffect(() => { fetchTasks() }, [fetchTasks])
+
+  async function handleDrawerSave(
+    id: string,
+    updates: Partial<Pick<Task, 'title' | 'description' | 'priority' | 'status' | 'due_date' | 'due_time' | 'tags'>>
+  ) {
+    await updateTask(id, {
+      ...updates,
+      completed: updates.status ? isTaskComplete(updates.status) : undefined,
+    })
+    toast.success('Gespeichert')
+  }
+
+  async function handleDrawerDelete(id: string) {
+    await deleteTask(id)
+    toast.success('Aufgabe gelöscht')
+  }
+
+  async function handleAddSubtask(parentId: string, title: string, dueDate: string | null) {
+    await createTask({ title, parent_id: parentId, due_date: dueDate ?? undefined, priority: 'medium' })
+  }
+
+  const editingSubtasks = editingTask
+    ? tasks.filter((t) => t.parent_id === editingTask.id)
+    : []
 
   const tasksByDate = useMemo(() => {
     const map: Record<string, typeof tasks> = {}
@@ -55,6 +83,7 @@ export default function PlannerPage() {
   }
 
   return (
+    <>
     <div className="max-w-5xl mx-auto p-4 md:p-8 animate-fade-in">
       {/* Header */}
       <header className="mb-6 flex items-start justify-between gap-4 flex-wrap">
@@ -114,9 +143,9 @@ export default function PlannerPage() {
           ))}
         </div>
       ) : view === 'week' ? (
-        <WeekView days={weekDays} tasksByDate={tasksByDate} onToggle={toggleTask} />
+        <WeekView days={weekDays} tasksByDate={tasksByDate} onToggle={toggleTask} onEdit={setEditingTask} />
       ) : (
-        <MonthView days={calendarDays} currentDate={currentDate} tasksByDate={tasksByDate} onToggle={toggleTask} />
+        <MonthView days={calendarDays} currentDate={currentDate} tasksByDate={tasksByDate} onToggle={toggleTask} onEdit={setEditingTask} />
       )}
 
       {!loading && Object.keys(tasksByDate).length === 0 && (
@@ -129,15 +158,27 @@ export default function PlannerPage() {
         </div>
       )}
     </div>
+
+    <TaskEditDrawer
+      task={editingTask}
+      subtasks={editingSubtasks}
+      onClose={() => setEditingTask(null)}
+      onSave={handleDrawerSave}
+      onDelete={handleDrawerDelete}
+      onToggleSubtask={(id) => toggleTask(id)}
+      onAddSubtask={handleAddSubtask}
+    />
+    </>
   )
 }
 
 function WeekView({
-  days, tasksByDate, onToggle,
+  days, tasksByDate, onToggle, onEdit,
 }: {
   days: Date[]
   tasksByDate: Record<string, ReturnType<typeof useTaskStore.getState>['tasks']>
   onToggle: (id: string) => void
+  onEdit: (task: Task) => void
 }) {
   return (
     <div className="grid grid-cols-7 gap-2">
@@ -167,20 +208,37 @@ function WeekView({
               </p>
             </div>
             <div className="space-y-1">
-              {dayTasks.slice(0, 5).map((task) => (
-                <button
-                  key={task.id}
-                  onClick={() => onToggle(task.id)}
-                  className={cn(
-                    'w-full text-left text-[11px] px-2 py-1 rounded-lg flex items-center gap-1.5 hover:bg-accent transition-colors',
-                    task.completed && 'opacity-40 line-through'
-                  )}
-                  title={task.title}
-                >
-                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', PRIORITY_DOT[task.priority] ?? 'bg-muted-foreground')} />
-                  <span className="truncate">{task.title}</span>
-                </button>
-              ))}
+              {dayTasks.slice(0, 5).map((task) => {
+                const status = task.status ?? (task.completed ? 'done' : 'todo')
+                const cfg = getStatusConfig(status as TaskStatus)
+                return (
+                  <div
+                    key={task.id}
+                    className={cn(
+                      'w-full text-left text-[11px] px-2 py-1 rounded-lg flex items-center gap-1.5 group/task',
+                      isTaskComplete(status as TaskStatus) && 'opacity-40 line-through'
+                    )}
+                    title={task.title}
+                  >
+                    <button
+                      onClick={() => onToggle(task.id)}
+                      className="flex items-center gap-1.5 flex-1 min-w-0 hover:opacity-70 transition-opacity"
+                    >
+                      <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 border', cfg.bgColor, cfg.borderColor)} />
+                      <span className="truncate">{task.title}</span>
+                    </button>
+                    <button
+                      onClick={() => onEdit(task)}
+                      className="opacity-0 group-hover/task:opacity-100 flex-shrink-0 p-0.5 rounded hover:bg-muted transition-all"
+                      title="Bearbeiten"
+                    >
+                      <svg className="h-2.5 w-2.5 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Z" />
+                      </svg>
+                    </button>
+                  </div>
+                )
+              })}
               {dayTasks.length > 5 && (
                 <p className="text-[10px] text-muted-foreground pl-2">+{dayTasks.length - 5} mehr</p>
               )}
@@ -195,12 +253,13 @@ function WeekView({
 const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
 
 function MonthView({
-  days, currentDate, tasksByDate, onToggle,
+  days, currentDate, tasksByDate, onToggle, onEdit,
 }: {
   days: Date[]
   currentDate: Date
   tasksByDate: Record<string, ReturnType<typeof useTaskStore.getState>['tasks']>
   onToggle: (id: string) => void
+  onEdit: (task: Task) => void
 }) {
   const today = new Date()
   return (
@@ -238,20 +297,37 @@ function MonthView({
                 {format(day, 'd')}
               </p>
               <div className="space-y-0.5">
-                {dayTasks.slice(0, 3).map((task) => (
-                  <button
-                    key={task.id}
-                    onClick={() => onToggle(task.id)}
-                    className={cn(
-                      'w-full text-left text-[10px] px-1.5 py-0.5 rounded-lg flex items-center gap-1 hover:bg-accent transition-colors',
-                      task.completed && 'opacity-40 line-through'
-                    )}
-                    title={task.title}
-                  >
-                    <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', PRIORITY_DOT[task.priority] ?? 'bg-muted-foreground')} />
-                    <span className="truncate">{task.title}</span>
-                  </button>
-                ))}
+                {dayTasks.slice(0, 3).map((task) => {
+                  const status = task.status ?? (task.completed ? 'done' : 'todo')
+                  const cfg = getStatusConfig(status as TaskStatus)
+                  return (
+                    <div
+                      key={task.id}
+                      className={cn(
+                        'text-[10px] px-1.5 py-0.5 rounded-lg flex items-center gap-1 group/mtask',
+                        isTaskComplete(status as TaskStatus) && 'opacity-40 line-through'
+                      )}
+                      title={task.title}
+                    >
+                      <button
+                        onClick={() => onToggle(task.id)}
+                        className="flex items-center gap-1 flex-1 min-w-0 hover:bg-accent transition-colors rounded px-0.5"
+                      >
+                        <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 border', cfg.bgColor, cfg.borderColor)} />
+                        <span className="truncate">{task.title}</span>
+                      </button>
+                      <button
+                        onClick={() => onEdit(task)}
+                        className="opacity-0 group-hover/mtask:opacity-100 flex-shrink-0 p-0.5 rounded hover:bg-muted transition-all"
+                        title="Bearbeiten"
+                      >
+                        <svg className="h-2 w-2 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor">
+                          <path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Z" />
+                        </svg>
+                      </button>
+                    </div>
+                  )
+                })}
                 {dayTasks.length > 3 && (
                   <p className="text-[10px] text-muted-foreground pl-1.5">+{dayTasks.length - 3} mehr</p>
                 )}

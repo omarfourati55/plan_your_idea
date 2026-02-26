@@ -1,8 +1,6 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${APP_IMAGE:-ghcr.io/omarfourati55/plan_your_idea:latest}
     ports:
       - "3000:3000"
     environment:

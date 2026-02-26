@@ -70,6 +70,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: ENV_LOCAL,GHCR_TOKEN,GHCR_USER,APP_IMAGE
           script: |
+            export PATH=$PATH:/usr/local/bin:/usr/bin
+
             cd ${{ secrets.SSH_PATH }}
 
             # Write .env.local from GitHub Secret
